@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CapturedPhotoToImageView</string>
+    <string name="user_captured_image">User captured Image</string>
+    <string name="take_photo">Take Photo</string>
+</resources>
