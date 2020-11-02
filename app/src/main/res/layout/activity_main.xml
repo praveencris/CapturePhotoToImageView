@@ -6,7 +6,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".MainActivity">
-
         <ImageView
             android:id="@+id/imv_photo"
             android:layout_width="320dp"
@@ -20,7 +19,6 @@
             app:layout_constraintTop_toTopOf="@id/guideline3"
             app:layout_constraintVertical_chainStyle="packed"
             tools:srcCompat="@tools:sample/backgrounds/scenic" />
-
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline3"
