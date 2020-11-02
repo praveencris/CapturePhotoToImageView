@@ -1,9 +1,7 @@
 package com.sabkayar.praveen.capturedphototoimageview
 
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -26,10 +24,12 @@ class MainActivity : AppCompatActivity() {
     val REQUEST_IMAGE_CAPTURE = 1
     val RC_CAMERA_PERMISSION = 2
     private lateinit var mBinding: ActivityMainBinding;
+    var isOnCreateCalled: Boolean = false;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        isOnCreateCalled = true
     }
 
     fun onTakePhotoClicked(view: View) {
@@ -89,15 +89,12 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             /*val imageBitmap = data?.extras?.get("data") as Bitmap
             mBinding.imvPhoto.setImageBitmap(imageBitmap)*/
-            setPic()
+            setPic(currentPhotoPath)
         }
     }
 
@@ -121,13 +118,13 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
     lateinit var currentPhotoPath: String
 
     @Throws(IOException::class)
     private fun createImageFile(): File {
         // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss",Locale.getDefault()).format(Date())
+        val timeStamp: String =
+            SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile(
             "JPEG_${timeStamp}_", /* prefix */
@@ -136,11 +133,12 @@ class MainActivity : AppCompatActivity() {
         ).apply {
             // Save a file: path for use with ACTION_VIEW intents
             currentPhotoPath = absolutePath
+            SharedPref(this@MainActivity).saveVariable(R.string.pathLatestPhoto, currentPhotoPath)
         }
     }
 
 
-    private fun setPic() {
+    private fun setPic(currentPhotoPath: String) {
         // Get the dimensions of the View
         val targetW: Int = mBinding.imvPhoto.width
         val targetH: Int = mBinding.imvPhoto.height
@@ -155,7 +153,12 @@ class MainActivity : AppCompatActivity() {
             val photoH: Int = outHeight
 
             // Determine how much to scale down the image
-            val scaleFactor: Int = Math.max(1, Math.min(photoW / targetW, photoH / targetH))
+            var scaleFactor: Int
+            try {
+                scaleFactor = Math.max(1, Math.min(photoW / targetW, photoH / targetH))
+            } catch (e: Exception) {
+                scaleFactor = 1
+            }
 
             // Decode the image file into a Bitmap sized to fill the View
             inJustDecodeBounds = false
@@ -164,6 +167,17 @@ class MainActivity : AppCompatActivity() {
         }
         BitmapFactory.decodeFile(currentPhotoPath, bmOptions)?.also { bitmap ->
             mBinding.imvPhoto.setImageBitmap(bitmap)
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && isOnCreateCalled) {
+            val photoPath = SharedPref(this).getVariable(R.string.pathLatestPhoto, "")
+            if (photoPath!!.length > 0) {
+                setPic(photoPath)
+                isOnCreateCalled = false
+            }
         }
     }
 }
